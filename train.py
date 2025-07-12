@@ -82,24 +82,14 @@ def load_data(config: Dict[str, Any], debug: bool = False) -> Tuple[dataSet, dat
     print("Loading datasets...")
     
     # File paths from config
-    # train_encode_file = config['data']['train_path'] + 'Com_Train_1628_ESMFold.pkl'
-    # train_label_file = config['data']['train_path'] + 'Com_Train_1628_label.pkl'
-    # train_list_file = config['data']['train_path'] + 'Com_Train_1628_list.pkl'
+    train_encode_file = config['data']['train_path'] + 'Com_Train_1628_ESMFold.pkl'
+    train_label_file = config['data']['train_path'] + 'Com_Train_1628_label.pkl'
+    train_list_file = config['data']['train_path'] + 'Com_Train_1628_list.pkl'
     
-    # valid_encode_file = config['data']['valid_path'] + 'Com_Valid_348_ESMFold.pkl'
-    # valid_label_file = config['data']['valid_path'] + 'Com_Valid_348_label.pkl'
-    # valid_list_file = config['data']['valid_path'] + 'Com_Valid_348_list.pkl'
-    # File paths from config
-    train_encode_file = config['data']['train_path'] + 'Com_Test_348_ESMFold.pkl'
-    train_label_file = config['data']['train_path'] + 'Com_Test_348_label.pkl'
-    train_list_file = config['data']['train_path'] + 'Com_Test_348_list.pkl'
-    
-    valid_encode_file = config['data']['valid_path'] + 'Com_Test_348_ESMFold.pkl'
-    valid_label_file = config['data']['valid_path'] + 'Com_Test_348_label.pkl'
-    valid_list_file = config['data']['valid_path'] + 'Com_Test_348_list.pkl'  
-    test_encode_file = config['data']['test_path'] + 'Com_Test_348_ESMFold.pkl'
-    test_label_file = config['data']['test_path'] + 'Com_Test_348_label.pkl'
-    test_list_file = config['data']['test_path'] + 'Com_Test_348_list.pkl'
+    valid_encode_file = config['data']['valid_path'] + 'Com_Valid_348_ESMFold.pkl'
+    valid_label_file = config['data']['valid_path'] + 'Com_Valid_348_label.pkl'
+    valid_list_file = config['data']['valid_path'] + 'Com_Valid_348_list.pkl'
+
     
     window_size = config['data']['window_size']
     
@@ -118,11 +108,11 @@ def create_data_loaders(train_dataset: dataSet, valid_dataset: dataSet, test_dat
     """Create data loaders for training, validation, and testing."""
     
     # Load indices
-    with open(config['data']['train_path'] + 'Com_Test_348_list.pkl', "rb") as fp:
+    with open(config['data']['train_path'] + 'Com_Train_1628_list.pkl', "rb") as fp:
         train_index = pickle.load(fp)
     train_list = [item[0] for item in train_index]
     
-    with open(config['data']['valid_path'] + 'Com_Test_348_list.pkl', "rb") as fp:
+    with open(config['data']['valid_path'] + 'Com_Valid_348_list.pkl', "rb") as fp:
         valid_index = pickle.load(fp)
     valid_list = [item[0] for item in valid_index]
     
