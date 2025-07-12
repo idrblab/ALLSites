@@ -1,0 +1,32 @@
+data:
+  train_path: "/home/data3/lumk/AnySite/"
+  valid_path: "/home/data3/lumk/AnySite/"  
+  test_path: "/home/data3/lumk/AnySite/"
+  window_size: 0
+  local_dim: 2560
+  protein_dim: 2560
+
+model:
+  protein_dim: 2560
+  local_dim: 2560
+  hidden_dim: 256
+  n_layers: 6
+  n_heads: 8
+  pf_dim: 512
+  dropout: 0.1
+  kernel_size: 3
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  epochs: 1
+  early_stopping: 10
+  decay_interval: 10
+  lr_decay: 0.9
+  seed: 42
+
+paths:
+  output_dir: "outputs/"
+  model_dir: "models/"
+  result_dir: "results/"
