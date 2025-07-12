@@ -302,19 +302,6 @@ python train.py --config configs/config.yaml --debug
 3. **Speed**: Use mixed precision training with `autocast()`
 4. **Distributed**: Scale learning rate linearly with number of GPUs
 
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@misc{protein_binding_predictor,
-  title={Protein Binding Site Predictor},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/your-repo}
-}
-```
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
