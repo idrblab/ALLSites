@@ -9,7 +9,7 @@ This project implements a protein binding site prediction model that combines:
 - **Transformer Decoder**: Processes features using multi-head attention mechanisms
 - **RAdam + Lookahead Optimization**: Advanced optimization strategy for better convergence
 - **ESMFold Embeddings**: Uses pre-computed protein embeddings for feature representation
-
+![Model Architecture](model.jpg)    
 ## Architecture
 
 ```
