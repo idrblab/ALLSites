@@ -24,7 +24,7 @@ Embeddings     GLU       Attention   Classification
 ## Project Structure
 
 ```
-AnySite/
+ALLSites/
 ├── src/
 │   ├── models/
 │   │   ├── model.py           # Main model architecture
@@ -77,7 +77,7 @@ pathlib
 1. **Clone the repository**:
 ```bash
 git clone <repository-url>
-cd AnySite
+cd ALLSites
 ```
 
 2. **Create conda environment**:
@@ -280,7 +280,7 @@ Epoch	Time1(sec)	Time2(sec)	Loss_train	ACC_dev	AUC_dev	Rec_dev	Pre_dev	F1_dev	MC
 3. **Import Errors**:
    ```bash
    # Add project to Python path
-   export PYTHONPATH="${PYTHONPATH}:/path/to/AnySite"
+   export PYTHONPATH="${PYTHONPATH}:/path/to/ALLSites"
    ```
 
 4. **NumPy Version Issues**:
