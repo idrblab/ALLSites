@@ -18,14 +18,11 @@ import math
 import timeit
 from typing import Tuple, Optional, List
 
-# 修正的导入方式 - 选择其中一种方式
 try:
-    # 方式1：从当前目录导入（如果优化器文件在models目录下）
     from radam import RAdam
     from lookahead import Lookahead
 except ImportError:
     try:
-        # 方式2：从父目录的optimizers导入
         import sys
         from pathlib import Path
         parent_dir = Path(__file__).parent.parent
@@ -33,7 +30,6 @@ except ImportError:
         from optimizers.radam import RAdam
         from optimizers.lookahead import Lookahead
     except ImportError:
-        # 方式3：相对导入（如果目录结构正确）
         from ..optimizers.radam import RAdam
         from ..optimizers.lookahead import Lookahead
 
@@ -377,13 +373,11 @@ class Trainer:
             else:
                 weight_p += [p]
         
-        # Setup optimizer - 只使用 RAdam，不使用 Lookahead 避免问题
         self.optimizer = RAdam([
             {'params': weight_p, 'weight_decay': weight_decay}, 
             {'params': bias_p, 'weight_decay': 0}
         ], lr=lr)
-        
-        # 如果你想要使用 Lookahead，可以取消下面的注释
+
         # self.optimizer = Lookahead(self.optimizer, k=5, alpha=0.5)
     
     def train(self, dataloader, device: torch.device) -> float:
@@ -401,7 +395,6 @@ class Trainer:
                 from utils.helpers import todevice
                 data_pack = todevice(local, protein, label, local_num, protein_num, device)
             except ImportError:
-                # 内置的数据转换函数，处理维度问题
                 if isinstance(local, np.ndarray):
                     local = torch.from_numpy(local).float().to(device)
                 else:
@@ -417,7 +410,6 @@ class Trainer:
                 else:
                     label = label.long().to(device)
                 
-                # 处理可能的额外维度
                 if local.dim() == 4 and local.shape[0] == 1:
                     local = local.squeeze(0)
                 if protein.dim() == 4 and protein.shape[0] == 1:
@@ -466,7 +458,6 @@ class Tester:
                     from utils.helpers import todevice
                     data_pack = todevice(local, protein, label, local_num, protein_num, device)
                 except ImportError:
-                    # 如果导入失败，直接在这里处理
                     local = torch.from_numpy(local).float().to(device) if isinstance(local, np.ndarray) else local.to(device)
                     protein = torch.from_numpy(protein).float().to(device) if isinstance(protein, np.ndarray) else protein.to(device)
                     label = torch.from_numpy(label).long().to(device) if isinstance(label, np.ndarray) else label.to(device)
