@@ -1,7 +1,7 @@
 data:
-  train_path: "/home/data3/lumk/AnySite/"
-  valid_path: "/home/data3/lumk/AnySite/"  
-  test_path: "/home/data3/lumk/AnySite/"
+  train_path: "/home/data3/lumk/ALLSites/"
+  valid_path: "/home/data3/lumk/ALLSites/"  
+  test_path: "/home/data3/lumk/ALLSites/"
   window_size: 0
   local_dim: 2560
   protein_dim: 2560
