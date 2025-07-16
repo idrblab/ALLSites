@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@Time:Created on 2019/8/20 20:44
-@author: LiFan Chen
-@Filename: radam.py
-@Software: PyCharm
-"""
 import math
 import torch
 from torch.optim.optimizer import Optimizer
