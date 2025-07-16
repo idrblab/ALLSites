@@ -162,7 +162,6 @@ def collate_fn(batch):
             local_lengths.append(local_len)
             protein_lengths.append(protein_len)
         
-        # 返回正确的3维张量，不要额外的维度
         return padded_locals, padded_proteins, padded_labels, local_lengths, protein_lengths
         
     except Exception as e:
