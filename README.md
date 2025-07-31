@@ -8,14 +8,14 @@ This project implements a protein binding site prediction model that combines:
 - **Convolutional Encoder**: Extracts local protein features using 1D convolutions with GLU activation
 - **Transformer Decoder**: Processes features using multi-head attention mechanisms
 - **RAdam + Lookahead Optimization**: Advanced optimization strategy for better convergence
-- **ESMFold Embeddings**: Uses pre-computed protein embeddings for feature representation
+- **ESM2 Embeddings**: Uses pre-computed protein embeddings for feature representation
 
 ## Architecture
 
 ```
-Input Protein → Encoder → Decoder → Classification Head
+Input Protein → Encoder → Decoder → Classification
      ↓             ↓         ↓            ↓
-ESMFold        Conv1D +   Multi-head   Binary
+ESM2        Conv1D +   Multi-head   Binary
 Embeddings     GLU       Attention   Classification
 (2560D)      (Residual)  (Cross +     (Binding/
                          Self)      Non-binding)
@@ -105,7 +105,7 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f
 ### Input Files
 The model expects three pickle files for each dataset split:
 
-1. **ESMFold Embeddings** (`*_ESMFold.pkl`):
+1. **ESM2 Embeddings** (`*_ESM2.pkl`):
    - List of protein embeddings
    - Each protein: `List[List[float]]` with shape `[seq_len, 2560]`
 
@@ -125,7 +125,7 @@ python preprocess.py --input protein_sequences.fasta --output data/processed --s
 # Expected file structure:
 data/
 ├── train/
-│   ├── Com_Train_1628_ESMFold.pkl
+│   ├── Com_Train_1628_ESM2.pkl
 │   ├── Com_Train_1628_label.pkl
 │   └── Com_Train_1628_list.pkl
 ├── valid/
@@ -144,7 +144,7 @@ data:
   valid_path: "data/valid/"
   test_path: "data/test/"
   window_size: 0            # Context window (0 = no windowing)
-  local_dim: 2560          # ESMFold embedding dimension
+  local_dim: 2560          # ESM2 embedding dimension
   protein_dim: 2560        # Protein feature dimension
 
 model:
@@ -153,7 +153,7 @@ model:
   n_heads: 8               # Multi-head attention heads
   pf_dim: 512             # Feedforward dimension
   dropout: 0.1             # Dropout rate
-  kernel_size: 3           # Convolution kernel size
+  kernel_size: 7           # Convolution kernel size
 
 training:
   batch_size: 32           # Batch size
@@ -225,7 +225,7 @@ python predict.py \
 ## Model Architecture Details
 
 ### Encoder (Convolutional)
-- **Input**: ESMFold embeddings `[batch, seq_len, 2560]`
+- **Input**: ESM2 embeddings `[batch, seq_len, 2560]`
 - **Layers**: Multiple 1D Conv + GLU + Residual connections
 - **Output**: Encoded features `[batch, seq_len, hidden_dim]`
 
@@ -321,6 +321,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- ESMFold for protein embeddings
+- ESM2 for protein embeddings
 - PyTorch team for the deep learning framework
 - Scientific Python community for tools and libraries
