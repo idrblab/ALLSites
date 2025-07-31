@@ -48,7 +48,8 @@ ALLSites/
 └── README.md               # This file
 ```
 
-## Requirements
+### Python Version
+python=3.10
 
 ### Dependencies
 ```bash
