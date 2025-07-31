@@ -82,11 +82,11 @@ def load_data(config: Dict[str, Any], debug: bool = False) -> Tuple[dataSet, dat
     print("Loading datasets...")
     
     # File paths from config
-    train_encode_file = config['data']['train_path'] + 'Com_Train_1628_ESMFold.pkl'
+    train_encode_file = config['data']['train_path'] + 'Com_Train_1628_ESM.pkl'
     train_label_file = config['data']['train_path'] + 'Com_Train_1628_label.pkl'
     train_list_file = config['data']['train_path'] + 'Com_Train_1628_list.pkl'
     
-    valid_encode_file = config['data']['valid_path'] + 'Com_Valid_348_ESMFold.pkl'
+    valid_encode_file = config['data']['valid_path'] + 'Com_Valid_348_ESM.pkl'
     valid_label_file = config['data']['valid_path'] + 'Com_Valid_348_label.pkl'
     valid_list_file = config['data']['valid_path'] + 'Com_Valid_348_list.pkl'
 
