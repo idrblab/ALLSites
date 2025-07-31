@@ -49,7 +49,9 @@ ALLSites/
 ```
 
 ### Python Version
+```bash
 python=3.10
+```
 
 ### Dependencies
 ```bash
