@@ -422,11 +422,6 @@ def main():
                 print(f'Validation improved at epoch {last_improve}, saving model...')
                 tester.save_model(model, file_model)
         
-        # Save best test model
-        if PRC_test > max_PRC_test:
-            max_PRC_test = PRC_test
-            if not is_distributed or dist.get_rank() == 0:
-                tester.save_model(model, file_model_test)
         
         # Early stopping check
         if epoch - last_improve >= early_stopping:
