@@ -48,9 +48,9 @@ ALLSites/
 └── README.md               # This file
 ```
 
-### Python Version
+### Conda Environment
 ```bash
-python=3.10
+conda create -n AllSites python=3.10
 ```
 
 ### Dependencies
