@@ -1,4 +1,4 @@
-# Protein Binding Site Predictor
+# Accurate Identification of Protein Binding Sites for All Drug Modalities Using ALLSites
 
 A deep learning framework for predicting protein binding sites using transformer-based architecture with convolutional encoders and attention mechanisms.
 
