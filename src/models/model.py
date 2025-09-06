@@ -329,11 +329,12 @@ class Predictor(nn.Module):
         sum_features, attention, logits = self.decoder(local, enc_src, local_mask, protein_mask)
         
         return sum_features, attention, logits
-    
+
     def __call__(self, data: Tuple, train: bool = True):
         """Model call for training/inference."""
         local, protein, correct_interaction, local_num, protein_num = data
-        Loss = nn.CrossEntropyLoss(weight=torch.from_numpy(np.array([1, 1])).float().to(self.device))
+        # Need to modify according to your own dataset
+        Loss = nn.CrossEntropyLoss(weight=torch.from_numpy(np.array([1, 5])).float().to(self.device))
         
         if train:
             sum_features, attention, predicted_interaction = self.forward(local, protein, local_num, protein_num)
