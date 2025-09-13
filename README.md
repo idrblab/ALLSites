@@ -3,7 +3,7 @@
 A deep learning framework for predicting protein binding sites using transformer-based architecture with convolutional encoders and attention mechanisms.
 
 ## Overview
-![Model Architecture](ALLSites-Figure1.jpg)    
+![Model Architecture](ALLSites.jpg)    
 This project implements a protein binding site prediction model that combines:
 - **Convolutional Encoder**: Extracts local protein features using 1D convolutions with GLU activation
 - **Transformer Decoder**: Processes features using multi-head attention mechanisms
