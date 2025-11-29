@@ -9,22 +9,22 @@ data:
 model:
   protein_dim: 2560
   local_dim: 2560
-  hidden_dim: 256
-  n_layers: 6
+  hidden_dim: 128
+  n_layers: 3
   n_heads: 8
-  pf_dim: 512
+  pf_dim: 256
   dropout: 0.1
-  kernel_size: 3
+  kernel_size: 7
 
 training:
   batch_size: 32
   learning_rate: 0.0001
   weight_decay: 0.0001
-  epochs: 1
+  epochs: 30
   early_stopping: 10
   decay_interval: 10
   lr_decay: 0.9
-  seed: 42
+  seed: 88
 
 paths:
   output_dir: "outputs/"
