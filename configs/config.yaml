@@ -24,7 +24,7 @@ training:
   early_stopping: 10
   decay_interval: 10
   lr_decay: 0.9
-  seed: 88
+  seed: 42
 
 paths:
   output_dir: "outputs/"
