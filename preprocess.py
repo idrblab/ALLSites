@@ -23,28 +23,20 @@ def parse_args():
 
 
 def parse_fasta_file(fasta_path: str) -> List[Dict]:
-    """Parse FASTA file with protein sequences and labels."""
+    """Parse a custom 3-line FASTA-like format (not standard FASTA)."""
     proteins = []
-    
     with open(fasta_path, 'r') as f:
-        lines = [line.strip() for line in f.readlines()]
+        lines = [line.strip() for line in f if line.strip()]
+
+    assert len(lines) % 3 == 0, "File must contain groups of 3 lines: >name, seq, labels"
     
-    i = 0
-    while i < len(lines):
-        if lines[i].startswith('>'):
-            name = lines[i][1:]  # Remove '>'
-            sequence = lines[i + 1] if i + 1 < len(lines) else ''
-            labels = lines[i + 2] if i + 2 < len(lines) else ''
-            
-            proteins.append({
-                'name': name,
-                'sequence': sequence,
-                'labels': labels
-            })
-            i += 3
-        else:
-            i += 1
-    
+    for i in range(0, len(lines), 3):
+        assert lines[i].startswith('>'), f"Line {i+1} should start with '>'"
+        proteins.append({
+            'name': lines[i][1:],
+            'sequence': lines[i + 1],
+            'labels': lines[i + 2]
+        })
     return proteins
 
 
