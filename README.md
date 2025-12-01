@@ -134,12 +134,12 @@ Make sure they retain their original filenames, then rerun the preprocessing scr
 After running preprocess.py, three pickle files expected by the model are generated for each dataset split.
 
 1. **ESM2 Embeddings** (`*-ESM2.pkl`):
-   - List of protein embeddings
-   - Each protein: `List[List[float]]` with shape `[seq_len, 2560]`
+   - List of protein embedding arrays
+   - Each protein: `numpy.ndarray` with shape `[seq_len, 2560]`, dtype `float32`
 
 2. **Labels** (`*-label.pkl`):
-   - List of binding site labels
-   - Each protein: `List[int]` with 0/1 labels for each residue
+   - List of binding site label arrays
+   - Each protein: `numpy.ndarray` with shape `[seq_len]`, dtype `int32`
 
 3. **Index List** (`*-list.pkl`):
    - Protein metadata
