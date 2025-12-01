@@ -8,6 +8,7 @@ import pickle
 from pathlib import Path
 from typing import List, Tuple, Dict
 
+import numpy as np
 import torch
 import esm
 
@@ -92,8 +93,8 @@ def main():
     batch_converter = alphabet.get_batch_converter()
 
     # Generate embeddings and labels
-    embeddings_all_proteins: List[List[List[float]]] = []
-    labels_all_proteins: List[List[int]] = []
+    embeddings_all_proteins: List[np.ndarray] = []
+    labels_all_proteins: List[np.ndarray] = []
 
     with torch.no_grad():
         for idx, protein in enumerate(proteins):
@@ -102,8 +103,8 @@ def main():
             seq_len = len(seq)
 
             if seq_len == 0:
-                embeddings_all_proteins.append([])
-                labels_all_proteins.append([])
+                embeddings_all_proteins.append(np.empty((0, 2560), dtype=np.float32))
+                labels_all_proteins.append(np.empty((0,), dtype=np.int32))
                 continue
 
             batch_data = [(name, seq)]
@@ -113,11 +114,14 @@ def main():
             results = model(batch_tokens, repr_layers=[36], return_contacts=False)
             token_representations = results["representations"][36]
 
-            per_residue = token_representations[0, 1:seq_len + 1, :].detach().cpu()
-            embedding = per_residue.numpy().tolist()
+            per_residue = token_representations[0, 1:seq_len + 1, :].detach()
+            embedding = per_residue.to(dtype=torch.float32).cpu().numpy()
 
             label_seq = protein['labels']
-            labels = [1 if label_seq[pos] == '1' else 0 for pos in range(seq_len)]
+            labels = np.asarray(
+                [1 if label_seq[pos] == '1' else 0 for pos in range(seq_len)],
+                dtype=np.int32
+            )
 
             embeddings_all_proteins.append(embedding)
             labels_all_proteins.append(labels)
