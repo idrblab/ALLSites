@@ -62,6 +62,9 @@ scikit-learn>=1.0.0
 pyyaml>=6.0
 pandas>=1.3.0
 
+# For ESM2 embedding
+fair-esm
+
 # Optional for distributed training
 torch.distributed
 
@@ -92,7 +95,7 @@ conda activate protein_prediction
 3. **Install dependencies**:
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip install numpy scikit-learn pyyaml pandas
+pip install numpy scikit-learn pyyaml pandas fair-esm
 ```
 
 4. **Verify installation**:
@@ -102,37 +105,45 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f
 
 ## Data Format
 
-### Input Files
-The model expects three pickle files for each dataset split:
+### Data Preparation
+```bash
+# Preprocess FASTA files (take CarbPI-site as an example)
+python preprocess.py --input dataset/CarbPI-site/Carb-Train517.fa --output dataset_processed/CarbPI-site --split train
 
-1. **ESM2 Embeddings** (`*_ESM2.pkl`):
+# Expected file structure:
+dataset_processed/
+└── CarbPI-site/
+    ├── train/
+    │   ├── Carb-Train517-ESM2.pkl
+    │   ├── Carb-Train517-label.pkl
+    │   └── Carb-Train517-list.pkl
+    ├── valid/
+    │   └── ...
+    └── test/
+        └── ...
+
+# ESM2 checkpoint download issues
+During the first `preprocess.py` run you should see messages like:
+Downloading: "https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t36_3B_UR50D.pt" to /home/<username>/.cache/torch/hub/checkpoints/esm2_t36_3B_UR50D.pt
+Downloading: "https://dl.fbaipublicfiles.com/fair-esm/regression/esm2_t36_3B_UR50D-contact-regression.pt" to /home/<username>/.cache/torch/hub/checkpoints/esm2_t36_3B_UR50D-contact-regression.pt
+If the download takes too long or fails, you can manually fetch the files from the URLs above and place them in `/home/<username>/.cache/torch/hub/checkpoints/`. Make sure they retain their original filenames, then rerun the preprocessing script.
+```
+
+### Input Files
+After running preprocess.py, three pickle files expected by the model are generated for each dataset split.
+
+1. **ESM2 Embeddings** (`*-ESM2.pkl`):
    - List of protein embeddings
    - Each protein: `List[List[float]]` with shape `[seq_len, 2560]`
 
-2. **Labels** (`*_label.pkl`):
+2. **Labels** (`*-label.pkl`):
    - List of binding site labels
    - Each protein: `List[int]` with 0/1 labels for each residue
 
-3. **Index List** (`*_list.pkl`):
+3. **Index List** (`*-list.pkl`):
    - Protein metadata
    - Format: `[(count, id_idx, position, dataset, protein_id, seq_length), ...]`
 
-### Data Preparation
-```bash
-# Preprocess FASTA files (example)
-python preprocess.py --input protein_sequences.fasta --output data/processed --split train
-
-# Expected file structure:
-data/
-├── train/
-│   ├── Com_Train_1628_ESM2.pkl
-│   ├── Com_Train_1628_label.pkl
-│   └── Com_Train_1628_list.pkl
-├── valid/
-│   └── ...
-└── test/
-    └── ...
-```
 
 ## Configuration
 
@@ -140,30 +151,35 @@ Edit `configs/config.yaml` to customize training:
 
 ```yaml
 data:
-  train_path: "data/train/"
-  valid_path: "data/valid/"
-  test_path: "data/test/"
-  window_size: 0            # Context window (0 = no windowing)
+  train_path: "dataset_processed/CarbPI-site/train/"
+  valid_path: "dataset_processed/CarbPI-site/valid/"
+  test_path: "dataset_processed/CarbPI-site/test/"
+  window_size: 0           # Context window (0 = no windowing)
   local_dim: 2560          # ESM2 embedding dimension
   protein_dim: 2560        # Protein feature dimension
 
 model:
-  hidden_dim: 256          # Hidden layer dimension
-  n_layers: 6              # Number of encoder/decoder layers
+  hidden_dim: 128          # Hidden layer dimension
+  n_layers: 3              # Number of encoder/decoder layers
   n_heads: 8               # Multi-head attention heads
-  pf_dim: 512             # Feedforward dimension
+  pf_dim: 256              # Feedforward dimension
   dropout: 0.1             # Dropout rate
   kernel_size: 7           # Convolution kernel size
 
 training:
   batch_size: 32           # Batch size
-  learning_rate: 0.001     # Initial learning rate
+  learning_rate: 0.0001    # Initial learning rate
   weight_decay: 0.0001     # L2 regularization
-  epochs: 100              # Maximum epochs
+  epochs: 30               # Maximum epochs
   early_stopping: 10       # Early stopping patience
   decay_interval: 10       # LR decay frequency
-  lr_decay: 0.9           # LR decay factor
-  seed: 42                # Random seed
+  lr_decay: 0.9            # LR decay factor
+  seed: 42                 # Random seed
+
+paths:
+  model_dir: "models/"
+  result_dir: "results/"
+  experiment_name: "Carb-Train517-Val129-Test162"
 ```
 
 ## Training
@@ -177,15 +193,12 @@ python train.py --config configs/config.yaml
 ```bash
 # Simple background execution
 nohup python train.py --config configs/config.yaml > train.log 2>&1 &
-
-# Or use the provided script
-./run_training.sh
 ```
 
 ### Distributed Training
 ```bash
 # Multi-GPU training
-python -m torch.distributed.launch --nproc_per_node=2 train.py --config configs/config.yaml --distributed
+torchrun --nproc_per_node=2 train.py --config configs/config.yaml --distributed
 ```
 
 ### Monitor Training
@@ -198,28 +211,6 @@ nvidia-smi
 
 # View training metrics
 tail -f results/output-*.txt
-```
-
-## Prediction
-
-### Single Protein Prediction
-```bash
-python predict.py \
-    --model models/best_model.pth \
-    --config configs/config.yaml \
-    --input data/test_protein.fasta \
-    --output predictions/ \
-    --threshold 0.3
-```
-
-### Batch Prediction
-```bash
-python predict.py \
-    --model models/best_model.pth \
-    --config configs/config.yaml \
-    --input data/test_dataset/ \
-    --output predictions/ \
-    --batch_size 64
 ```
 
 ## Model Architecture Details
