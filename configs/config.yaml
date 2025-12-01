@@ -1,7 +1,7 @@
 data:
-  train_path: "/home/data3/lumk/ALLSites/"
-  valid_path: "/home/data3/lumk/ALLSites/"  
-  test_path: "/home/data3/lumk/ALLSites/"
+  train_path: "dataset_processed/CarbPI-site/test/"
+  valid_path: "dataset_processed/CarbPI-site/valid/"  
+  test_path: "dataset_processed/CarbPI-site/test/"
   window_size: 0
   local_dim: 2560
   protein_dim: 2560
@@ -30,3 +30,4 @@ paths:
   output_dir: "outputs/"
   model_dir: "models/"
   result_dir: "results/"
+  experiment_name: "Carb-Train517-Val129-Test162"
