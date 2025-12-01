@@ -278,11 +278,9 @@ def create_model(config: Dict[str, Any], device: torch.device) -> Predictor:
 
 def setup_output_directories(config: Dict[str, Any], experiment_name: str) -> Tuple[str, str, str]:
     """Setup output directories for models and results."""
-    output_dir = Path(config['paths']['output_dir'])
     model_dir = Path(config['paths']['model_dir'])
     result_dir = Path(config['paths']['result_dir'])
 
-    output_dir.mkdir(exist_ok=True)
     model_dir.mkdir(exist_ok=True)
     result_dir.mkdir(exist_ok=True)
 
