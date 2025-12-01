@@ -63,49 +63,44 @@ class dataSet(data.Dataset):
             # Get protein sequence features
             all_seq_features = self.all_encodes[protein_id]
             
-            # Validate and convert to list if needed
+            # Normalize encodings to float32 numpy arrays for consistent downstream usage
             if isinstance(all_seq_features, torch.Tensor):
-                all_seq_features = all_seq_features.cpu().numpy().tolist()
+                all_seq_features = all_seq_features.detach().cpu().numpy().astype(np.float32, copy=False)
             elif isinstance(all_seq_features, np.ndarray):
-                all_seq_features = all_seq_features.tolist()
-            elif not isinstance(all_seq_features, list):
+                all_seq_features = all_seq_features.astype(np.float32, copy=False)
+            elif isinstance(all_seq_features, list):
+                all_seq_features = np.asarray(all_seq_features, dtype=np.float32)
+            else:
                 raise ValueError(f"Unexpected all_seq_features type: {type(all_seq_features)}")
             
             # Ensure non-empty features
-            if len(all_seq_features) == 0:
-                all_seq_features = [[0.0] * 2560]
-            
-            embedding_dim = len(all_seq_features[0])
+            if all_seq_features.size == 0:
+                all_seq_features = np.zeros((1, 2560), dtype=np.float32)
+
+            embedding_dim = all_seq_features.shape[1]
             
             # Create local features based on window size
             if self.window_size == 0:
                 # No windowing, just use the single residue
-                if ii < len(all_seq_features):
-                    local_features = [all_seq_features[ii]]
+                if ii < all_seq_features.shape[0]:
+                    local_features = all_seq_features[ii : ii + 1]
                 else:
-                    local_features = [[0.0] * embedding_dim]
+                    local_features = np.zeros((1, embedding_dim), dtype=np.float32)
             else:
                 # Windowed features
-                local_features = []
-                for pos in range(ii - self.window_size, ii + self.window_size + 1):
-                    if 0 <= pos < len(all_seq_features):
-                        local_features.append(all_seq_features[pos])
-                    else:
-                        local_features.append([0.0] * embedding_dim)
+                window_span = 2 * self.window_size + 1
+                local_features = np.zeros((window_span, embedding_dim), dtype=np.float32)
+                for offset, pos in enumerate(range(ii - self.window_size, ii + self.window_size + 1)):
+                    if 0 <= pos < all_seq_features.shape[0]:
+                        local_features[offset] = all_seq_features[pos]
             
             # Get label
             protein_labels = self.all_label[protein_id]
-            if isinstance(protein_labels, np.ndarray):
-                protein_labels = protein_labels.tolist()
-            
-            if ii < len(protein_labels):
-                label = float(protein_labels[ii])
-            else:
-                label = 0.0
+            label = float(protein_labels[ii]) if ii < len(protein_labels) else 0.0
             
             # Convert to numpy arrays
-            local_features = np.array(local_features, dtype=np.float32)
-            all_seq_features = np.array(all_seq_features, dtype=np.float32)
+            local_features = np.asarray(local_features, dtype=np.float32)
+            all_seq_features = np.asarray(all_seq_features, dtype=np.float32)
             label = np.array(label, dtype=np.float32)
             
             return local_features, all_seq_features, label
