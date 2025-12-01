@@ -27,7 +27,6 @@ training:
   seed: 42
 
 paths:
-  output_dir: "outputs/"
   model_dir: "models/"
   result_dir: "results/"
   experiment_name: "Carb-Train517-Val129-Test162"
