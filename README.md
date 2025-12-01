@@ -253,7 +253,7 @@ Training outputs are saved to:
 Example results format:
 ```
 Epoch	Time1(sec)	Time2(sec)	Loss_train	ACC_dev	AUC_dev	Rec_dev	Pre_dev	F1_dev	MCC_dev	PRC_dev	ACC_test	AUC_test	Rec_test	Pre_test	F1_test	MCC_test	PRC_test
-1	45.2	12.3	0.642	0.723	0.801	0.675	0.782	0.724	0.456	0.789	0.718	0.795	0.681	0.771	0.721	0.442	0.783
+1	1186.210	1298.588	410.146	0.949	0.948	0.698	0.388	0.498	0.496	0.539	0.947	0.947	0.727	0.401	0.517	0.516	0.571
 ```
 
 ## Troubleshooting
