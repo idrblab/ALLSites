@@ -1,5 +1,5 @@
 data:
-  train_path: "dataset_processed/CarbPI-site/test/"
+  train_path: "dataset_processed/CarbPI-site/train/"
   valid_path: "dataset_processed/CarbPI-site/valid/"  
   test_path: "dataset_processed/CarbPI-site/test/"
   window_size: 0
