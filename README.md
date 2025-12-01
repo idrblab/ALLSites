@@ -126,7 +126,8 @@ dataset_processed/
 During the first `preprocess.py` run you should see messages like:
 Downloading: "https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t36_3B_UR50D.pt" to /home/<username>/.cache/torch/hub/checkpoints/esm2_t36_3B_UR50D.pt
 Downloading: "https://dl.fbaipublicfiles.com/fair-esm/regression/esm2_t36_3B_UR50D-contact-regression.pt" to /home/<username>/.cache/torch/hub/checkpoints/esm2_t36_3B_UR50D-contact-regression.pt
-If the download takes too long or fails, you can manually fetch the files from the URLs above and place them in `/home/<username>/.cache/torch/hub/checkpoints/`. Make sure they retain their original filenames, then rerun the preprocessing script.
+If the download takes too long or fails, you can manually fetch the files from the URLs above and place them in `/home/<username>/.cache/torch/hub/checkpoints/`.
+Make sure they retain their original filenames, then rerun the preprocessing script.
 ```
 
 ### Input Files
