@@ -45,8 +45,6 @@ def parse_args() -> argparse.Namespace:
                        help="Path to configuration file")
     parser.add_argument("--distributed", action="store_true", 
                        help="Enable distributed training")
-    parser.add_argument("--local_rank", type=int, default=0, 
-                       help="Local rank for distributed training")
     parser.add_argument("--resume", type=str, default=None,
                        help="Path to checkpoint to resume from")
     parser.add_argument("--debug", action="store_true",
@@ -66,7 +64,7 @@ def setup_distributed() -> Tuple[bool, int, torch.device]:
     if torch.cuda.is_available() and torch.cuda.device_count() > 1:
         try:
             dist.init_process_group(backend='nccl')
-            local_rank = int(os.environ.get('LOCAL_RANK', 0))
+            local_rank = int(os.environ.get('LOCAL_RANK', 0))  # Read LOCAL_RANK from environment variable
             torch.cuda.set_device(local_rank)
             device = torch.device("cuda", local_rank)
             return True, local_rank, device
@@ -77,46 +75,73 @@ def setup_distributed() -> Tuple[bool, int, torch.device]:
         return False, 0, torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def load_data(config: Dict[str, Any], debug: bool = False) -> Tuple[dataSet, dataSet, dataSet]:
+def _resolve_split_files(split_dir: str) -> Dict[str, str]:
+    """Resolve encoding/label/list files within a split directory."""
+    split_path = Path(split_dir).expanduser()
+    if not split_path.exists():
+        raise FileNotFoundError(f"Split directory not found: {split_path}")
+
+    def pick_single(pattern: str, kind: str) -> Path:
+        candidates = sorted(split_path.glob(pattern))
+        if not candidates:
+            raise FileNotFoundError(f"No {kind} files matching '{pattern}' found in {split_path}")
+        if len(candidates) > 1:
+            candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            print(f"[Warning] Multiple {kind} files found in {split_path}. Using most recent: {candidates[0].name}")
+        return candidates[0]
+
+    encode_file = pick_single("*-ESM2.pkl", "encoding")
+    label_file = pick_single("*-label.pkl", "label")
+    list_file = pick_single("*-list.pkl", "index")
+
+    return {
+        "encode": str(encode_file.resolve()),
+        "label": str(label_file.resolve()),
+        "list": str(list_file.resolve()),
+    }
+
+
+def load_data(config: Dict[str, Any], debug: bool = False) -> Tuple[dataSet, dataSet, dataSet, Dict[str, Dict[str, str]]]:
     """Load training, validation, and test datasets."""
     print("Loading datasets...")
     
-    # File paths from config
-    train_encode_file = config['data']['train_path'] + 'Com_Train_1628_ESM.pkl'
-    train_label_file = config['data']['train_path'] + 'Com_Train_1628_label.pkl'
-    train_list_file = config['data']['train_path'] + 'Com_Train_1628_list.pkl'
-    
-    valid_encode_file = config['data']['valid_path'] + 'Com_Valid_348_ESM.pkl'
-    valid_label_file = config['data']['valid_path'] + 'Com_Valid_348_label.pkl'
-    valid_list_file = config['data']['valid_path'] + 'Com_Valid_348_list.pkl'
+    resolved_files = {
+        "train": _resolve_split_files(config['data']['train_path']),
+        "valid": _resolve_split_files(config['data']['valid_path']),
+        "test": _resolve_split_files(config['data']['test_path']),
+    }
 
-    
+    train_files = resolved_files['train']
+    valid_files = resolved_files['valid']
+    test_files = resolved_files['test']
+
     window_size = config['data']['window_size']
     
     # Create datasets
-    train_dataset = dataSet(window_size, train_encode_file, train_label_file, train_list_file)
-    valid_dataset = dataSet(window_size, valid_encode_file, valid_label_file, valid_list_file)
-    test_dataset = dataSet(window_size, test_encode_file, test_label_file, test_list_file)
+    train_dataset = dataSet(window_size, train_files['encode'], train_files['label'], train_files['list'])
+    valid_dataset = dataSet(window_size, valid_files['encode'], valid_files['label'], valid_files['list'])
+    test_dataset = dataSet(window_size, test_files['encode'], test_files['label'], test_files['list'])
     
     print(f"Loaded datasets - Train: {len(train_dataset)}, Valid: {len(valid_dataset)}, Test: {len(test_dataset)}")
     
-    return train_dataset, valid_dataset, test_dataset
+    return train_dataset, valid_dataset, test_dataset, resolved_files
 
 
 def create_data_loaders(train_dataset: dataSet, valid_dataset: dataSet, test_dataset: dataSet,
-                       config: Dict[str, Any], is_distributed: bool) -> Tuple:
+                       resolved_files: Dict[str, Dict[str, str]], config: Dict[str, Any],
+                       is_distributed: bool) -> Tuple:
     """Create data loaders for training, validation, and testing."""
     
     # Load indices
-    with open(config['data']['train_path'] + 'Com_Train_1628_list.pkl', "rb") as fp:
+    with open(resolved_files['train']['list'], "rb") as fp:
         train_index = pickle.load(fp)
     train_list = [item[0] for item in train_index]
     
-    with open(config['data']['valid_path'] + 'Com_Valid_348_list.pkl', "rb") as fp:
+    with open(resolved_files['valid']['list'], "rb") as fp:
         valid_index = pickle.load(fp)
     valid_list = [item[0] for item in valid_index]
     
-    with open(config['data']['test_path'] + 'Com_Test_348_list.pkl', "rb") as fp:
+    with open(resolved_files['test']['list'], "rb") as fp:
         test_index = pickle.load(fp)
     test_list = [item[0] for item in test_index]
     
@@ -251,22 +276,21 @@ def create_model(config: Dict[str, Any], device: torch.device) -> Predictor:
     return model
 
 
-def setup_output_directories(config: Dict[str, Any]) -> Tuple[str, str, str]:
+def setup_output_directories(config: Dict[str, Any], experiment_name: str) -> Tuple[str, str, str]:
     """Setup output directories for models and results."""
     output_dir = Path(config['paths']['output_dir'])
     model_dir = Path(config['paths']['model_dir'])
     result_dir = Path(config['paths']['result_dir'])
-    
+
     output_dir.mkdir(exist_ok=True)
     model_dir.mkdir(exist_ok=True)
     result_dir.mkdir(exist_ok=True)
-    
+
     # Create experiment-specific files
-    experiment_name = "Com-Train1628-Val348-Test348"
     file_AUCs = result_dir / f"output-{experiment_name}.txt"
-    file_model = model_dir / f"{experiment_name}-best"
+    file_model = model_dir / f"{experiment_name}-best.pth"
     file_model_test = model_dir / f"{experiment_name}-test-best"
-    
+
     return str(file_AUCs), str(file_model), str(file_model_test)
 
 
@@ -323,11 +347,11 @@ def main():
     init_seeds(config['training']['seed'])
     
     # Load datasets
-    train_dataset, valid_dataset, test_dataset = load_data(config, args.debug)
+    train_dataset, valid_dataset, test_dataset, resolved_files = load_data(config, args.debug)
     
     # Create data loaders
     train_loader, valid_loader, test_loader = create_data_loaders(
-        train_dataset, valid_dataset, test_dataset, config, is_distributed
+        train_dataset, valid_dataset, test_dataset, resolved_files, config, is_distributed
     )
     
     # Create model
@@ -343,8 +367,11 @@ def main():
                      config['training']['weight_decay'])
     tester = Tester(model)
     
+    # Get experiment name from config 
+    experiment_name = config.get('paths', {}).get('experiment_name')
+    
     # Setup output directories and files
-    file_AUCs, file_model, file_model_test = setup_output_directories(config)
+    file_AUCs, file_model, file_model_test = setup_output_directories(config, experiment_name)
     
     # Initialize metrics logging
     if not is_distributed or dist.get_rank() == 0:
