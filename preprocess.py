@@ -5,9 +5,11 @@ Converts FASTA files to the required format for training.
 
 import argparse
 import pickle
-import pandas as pd
 from pathlib import Path
 from typing import List, Tuple, Dict
+
+import torch
+import esm
 
 
 def parse_args():
@@ -80,37 +82,69 @@ def main():
     # Create protein list
     protein_list = create_protein_list(proteins)
     
-    # Note: This is a template - actual ESMFold encoding would happen here
-    # For now, create dummy embeddings as placeholders
-    dummy_embeddings = []
-    dummy_labels = []
+    # Initialize ESM2 model (esm2_t36_3B_UR50D -> 2560-dim embeddings)
+    print("Loading ESM2 model (esm2_t36_3B_UR50D)...")
+
+    model, alphabet = esm.pretrained.esm2_t36_3B_UR50D()
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    batch_converter = alphabet.get_batch_converter()
+
+    # Generate embeddings and labels
+    embeddings_all_proteins: List[List[List[float]]] = []
+    labels_all_proteins: List[List[int]] = []
+
+    with torch.no_grad():
+        for idx, protein in enumerate(proteins):
+            name = protein['name']
+            seq = protein['sequence']
+            seq_len = len(seq)
+
+            if seq_len == 0:
+                embeddings_all_proteins.append([])
+                labels_all_proteins.append([])
+                continue
+
+            batch_data = [(name, seq)]
+            _, _, batch_tokens = batch_converter(batch_data)
+            batch_tokens = batch_tokens.to(device)
+
+            results = model(batch_tokens, repr_layers=[36], return_contacts=False)
+            token_representations = results["representations"][36]
+
+            per_residue = token_representations[0, 1:seq_len + 1, :].detach().cpu()
+            embedding = per_residue.numpy().tolist()
+
+            label_seq = protein['labels']
+            labels = [1 if label_seq[pos] == '1' else 0 for pos in range(seq_len)]
+
+            embeddings_all_proteins.append(embedding)
+            labels_all_proteins.append(labels)
+
+            if (idx + 1) % 10 == 0 or idx == 0:
+                print(f"Encoded {idx + 1}/{len(proteins)} proteins")
     
-    for protein in proteins:
-        seq_len = len(protein['sequence'])
-        # Placeholder: replace with actual ESMFold encoding
-        embedding = [[0.0] * 2560 for _ in range(seq_len)]
-        labels = [int(c) for c in protein['labels'][:seq_len]]
-        
-        dummy_embeddings.append(embedding)
-        dummy_labels.append(labels)
-    
-    # Save processed data
-    split_name = args.split.capitalize()
-    
-    encode_file = output_dir / f"Com_{split_name}_{len(proteins)}_ESMFold.pkl"
-    label_file = output_dir / f"Com_{split_name}_{len(proteins)}_label.pkl"
-    list_file = output_dir / f"Com_{split_name}_{len(proteins)}_list.pkl"
+    # Save processed data scoped under the requested split directory
+    split_dir = output_dir / args.split
+    split_dir.mkdir(parents=True, exist_ok=True)
+
+    input_stem = Path(args.input).stem
+
+    encode_file = split_dir / f"{input_stem}-ESM2.pkl"
+    label_file = split_dir / f"{input_stem}-label.pkl"
+    list_file = split_dir / f"{input_stem}-list.pkl"
     
     with open(encode_file, 'wb') as f:
-        pickle.dump(dummy_embeddings, f)
-    
+        pickle.dump(embeddings_all_proteins, f)
+
     with open(label_file, 'wb') as f:
-        pickle.dump(dummy_labels, f)
+        pickle.dump(labels_all_proteins, f)
     
     with open(list_file, 'wb') as f:
         pickle.dump(protein_list, f)
     
-    print(f"Saved processed data to {output_dir}")
+    print(f"Saved processed data to {split_dir}")
     print(f"- Encodings: {encode_file}")
     print(f"- Labels: {label_file}")
     print(f"- Protein list: {list_file}")
